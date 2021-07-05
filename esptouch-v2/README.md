@@ -1,8 +1,5 @@
 # EspTouch V2
 
-## Example
-- [example](../app/src/main/java/com/espressif/esptouch/android/v2)
-
 ## APIs
 - Create provisioner instance
   ```java
