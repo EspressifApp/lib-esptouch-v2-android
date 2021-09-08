@@ -1,7 +1,9 @@
 plugins {
     id 'com.android.library'
-    id 'com.github.dcendents.android-maven' version '2.1'
+    id 'maven-publish'
 }
+
+def libVersion = "2.1.0-debug"
 
 android {
     compileSdkVersion 30
@@ -9,28 +11,40 @@ android {
     defaultConfig {
         minSdkVersion 21
         targetSdkVersion 30
-        versionCode 4
-        versionName "2.0.0"
     }
 
     buildTypes {
         debug {
-            buildConfigField "String", "VERSION_NAME", "\"${defaultConfig.versionName}\""
+            buildConfigField "String", "VERSION_NAME", "\"$libVersion\""
         }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            buildConfigField "String", "VERSION_NAME", "\"${defaultConfig.versionName}\""
+            buildConfigField "String", "VERSION_NAME", "\"$libVersion\""
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
 }
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    implementation 'androidx.appcompat:appcompat:1.3.0'
+    implementation 'androidx.appcompat:appcompat:1.3.1'
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.release
+
+                groupId = 'com.github.EspressifApp'
+                artifactId = 'lib-esptouch-v2-android '
+                version = "$libVersion"
+            }
+        }
+    }
 }

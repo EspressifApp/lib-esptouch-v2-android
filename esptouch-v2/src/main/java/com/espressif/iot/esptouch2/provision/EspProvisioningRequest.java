@@ -15,9 +15,10 @@ import java.net.UnknownHostException;
 public class EspProvisioningRequest implements Parcelable {
     private static final int SSID_LENGTH_MAX = 32;
     private static final int PASSWORD_LENGTH_MAX = 64;
-    private static final int RESERVED_LENGTH_MAX = 127;
     private static final int BSSID_LENGTH = 6;
     private static final int AES_KEY_LENGTH = 16;
+
+    public static final int RESERVED_LENGTH_MAX = 64;
 
     public final InetAddress address;
 

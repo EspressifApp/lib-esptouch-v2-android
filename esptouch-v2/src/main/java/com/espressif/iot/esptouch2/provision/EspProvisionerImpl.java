@@ -16,7 +16,6 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -37,7 +36,7 @@ class EspProvisionerImpl implements IEspProvisioner {
     private static final int DATA_PKG_TIMEOUT_SEND = 90_000;
     private static final int DATA_PKG_TIMEOUT_RECEIVE = DATA_PKG_TIMEOUT_SEND + 2_000;
 
-    private InetAddress mBroadcastAddress;
+    private final InetAddress mBroadcastAddress;
     private final ExecutorService mExecutorService;
     private final WifiManager.MulticastLock mMulticastLock;
 
@@ -57,11 +56,14 @@ class EspProvisionerImpl implements IEspProvisioner {
         checkPermissions(context);
         WifiManager wm = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         assert wm != null;
-        try {
-            mBroadcastAddress = InetAddress.getByName("255.255.255.255");
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        }
+        mBroadcastAddress = TouchNetUtil.getBroadcastAddress(wm);
+//        if (mBroadcastAddress == null) {
+//            try {
+//                mBroadcastAddress = InetAddress.getByName("255.255.255.255");
+//            } catch (UnknownHostException e) {
+//                e.printStackTrace();
+//            }
+//        }
         mMulticastLock = wm.createMulticastLock("EspTouchV2");
         mMulticastLock.setReferenceCounted(false);
         mMulticastLock.acquire();
@@ -262,6 +264,7 @@ class EspProvisionerImpl implements IEspProvisioner {
                         final InetAddress address = packet.getAddress();
                         String bssidStr = String.format("%02x:%02x:%02x:%02x:%02x:%02x",
                                 response[1], response[2], response[3], response[4], response[5], response[6]);
+                        mExecutorService.submit(new AckRunnable(DEVICE_ACK_PORT, address));
                         synchronized (mResponseMacs) {
                             if (!mResponseMacs.contains(bssidStr)) {
                                 mResponseMacs.add(bssidStr);
@@ -277,6 +280,35 @@ class EspProvisionerImpl implements IEspProvisioner {
             }
             stopProvisioning();
             Log.d(TAG, "ProvisionReceiveRunnable: end");
+        }
+    }
+
+    private static class AckRunnable implements Runnable {
+        final int devicePort;
+        final InetAddress deviceAddress;
+
+        AckRunnable(int devicePort, InetAddress deviceAddress) {
+            this.devicePort = devicePort;
+            this.deviceAddress = deviceAddress;
+        }
+
+        private DatagramPacket genAckPacket() {
+            return new DatagramPacket(new byte[]{1}, 1, deviceAddress, devicePort);
+        }
+
+        @Override
+        public void run() {
+            try (DatagramSocket socket = TouchNetUtil.createUdpSocket()) {
+                if (socket != null) {
+                    socket.send(genAckPacket());
+                    socket.send(genAckPacket());
+                    Log.d(TAG, "AckRunnable run: send ack");
+                } else {
+                    Log.w(TAG, "AckRunnable run: create ack socket failed");
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 

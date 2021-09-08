@@ -1,12 +1,12 @@
 package com.espressif.iot.esptouch2.provision;
 
 import android.net.DhcpInfo;
-import android.net.InetAddresses;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.DatagramSocket;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -145,4 +145,16 @@ public class TouchNetUtil {
         }
         return result;
     }
+
+    public static DatagramSocket createUdpSocket() {
+        for (int port = 23233; port < 0xffff; ++port) {
+            try {
+                return new DatagramSocket(port);
+            } catch (SocketException ignored) {
+            }
+        }
+
+        return null;
+    }
+
 }
