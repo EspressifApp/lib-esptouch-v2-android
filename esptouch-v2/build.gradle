@@ -42,7 +42,7 @@ afterEvaluate {
                 from components.release
 
                 groupId = 'com.github.EspressifApp'
-                artifactId = 'lib-esptouch-v2-android '
+                artifactId = 'lib-esptouch-v2-android'
                 version = "$libVersion"
             }
         }
