@@ -14,7 +14,7 @@
    ```
 - And add a dependency code to your app module's `build.gradle` file.
   ```
-  implementation 'com.github.EspressifApp:lib-esptouch-v2-android:2.0.0'
+  implementation 'com.github.EspressifApp:lib-esptouch-v2-android:2.1.0'
   ```
 
 ## ESPRSSIF MIT License
