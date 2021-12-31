@@ -48,7 +48,7 @@
       }
 
       @Override
-      public void onResponse(EspProvisionResult result) {
+      public void onResponse(EspProvisioningResult result) {
           // Result callback
       }
 
