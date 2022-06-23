@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-def libVersion = "2.1.0"
+def libVersion = "2.1.1"
 
 android {
     compileSdkVersion 32

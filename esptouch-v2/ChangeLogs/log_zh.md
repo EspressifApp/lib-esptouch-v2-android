@@ -1,6 +1,9 @@
 # 更新记录
 [English](log_en.md)
 
+## 2.2.1
+- 库 `DEBUG` 参数使用 `BuildConfig.DEBUG`
+
 ## 2.2.0
 - 升级 gradle
 - 升级 `targetSdkVersion` 为 `32`

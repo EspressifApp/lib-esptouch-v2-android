@@ -1,6 +1,9 @@
 # Change Log
 [中文](log_zh.md)
 
+## 2.2.1
+- Set lib `DEBUG` as `BluidConfig.DEBUG`
+
 ## 2.2.0
 - Update gradle
 - Update `targetSdkVersion` to `32`
