@@ -2,7 +2,7 @@
 
 [![](https://jitpack.io/v/EspressifApp/lib-esptouch-v2-android.svg)](https://jitpack.io/#EspressifApp/lib-esptouch-v2-android)
   
-This respsitory is just used to publish lib to JitPack.
+This repo is just used to publish lib to JitPack.
 
 ## How to import
 - Add this in your root `build.gradle` at the end of repositories:
@@ -20,7 +20,7 @@ This respsitory is just used to publish lib to JitPack.
   ```
 
 ## ESPRSSIF MIT License
-- [License](ESPRESSIF_MIT_LICENSE)
+- [License](LICENSE)
 
 ## Example
 - [EsptouchForAndroid](https://github.com/EspressifApp/EsptouchForAndroid)
