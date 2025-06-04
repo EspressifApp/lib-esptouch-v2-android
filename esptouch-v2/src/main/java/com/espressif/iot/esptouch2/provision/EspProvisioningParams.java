@@ -24,12 +24,13 @@ class EspProvisioningParams {
 
     private final List<byte[]> mDataPacketList;
 
-    private int mAppPortMark;
+    private final int mAppPortMark;
     private byte[] mPassword;
     private byte[] mSsid;
     private byte[] mReservedData;
 
     private boolean mWillEncrypt;
+    private int mSecurityVer;
     private byte[] mAesKey;
 
     private boolean mPasswordEncode;
@@ -64,6 +65,7 @@ class EspProvisioningParams {
                 return true;
             }
         }
+        // all bytes are in 0..127
         return false;
     }
 
@@ -77,6 +79,7 @@ class EspProvisioningParams {
 
         mWillEncrypt = request.aesKey != null && (mPassword.length > 0 || mReservedData.length > 0);
         mAesKey = mWillEncrypt ? request.aesKey : EMPTY_DATA;
+        mSecurityVer = request.securityVer & 0b11;
 
         mPasswordEncode = checkCharEncode(mPassword);
         mReservedEncode = checkCharEncode(mReservedData);
@@ -89,7 +92,7 @@ class EspProvisioningParams {
         crcCalc.update(request.bssid);
         int bssidCrc = (int) (crcCalc.getValue() & 0xff);
         int flag = (isIPv4 ? 1 : 0) // bit0: ipv4 or ipv6
-                | (mWillEncrypt ? 0b01_0 : 0) // bit1 bit2: crypt
+                | (mWillEncrypt ? (mSecurityVer << 1) : 0) // bit1 bit2: crypt
                 | ((mAppPortMark & 0b11) << 3) // bit3 bit4: app port
                 | ((VERSION & 0b11) << 6); // bit6 bit7: version
         mHead = new byte[]{
@@ -171,11 +174,18 @@ class EspProvisioningParams {
         int ssidPaddingFactor;
         boolean ssidEncode;
 
+        byte[] aesIV = EMPTY_DATA;
+
         if (mWillEncrypt) {
+            if (mSecurityVer == 2) {
+                aesIV = new byte[20];
+                random.nextBytes(aesIV);
+            }
+            TouchAES aes = new TouchAES(mAesKey, aesIV);
+
             byte[] willEncryptData = new byte[mPassword.length + mReservedData.length];
             System.arraycopy(mPassword, 0, willEncryptData, 0, mPassword.length);
             System.arraycopy(mReservedData, 0, willEncryptData, mPassword.length, mReservedData.length);
-            TouchAES aes = new TouchAES(mAesKey);
             byte[] encryptedData = aes.encrypt(willEncryptData);
             password = encryptedData;
             passwordEncode = true;
@@ -242,34 +252,40 @@ class EspProvisioningParams {
         os.write(passwordPadding, 0, passwordPadding.length);
         os.write(reservedData, 0, reservedData.length);
         os.write(reservedPadding, 0, reservedPadding.length);
+        os.write(aesIV, 0, aesIV.length);
         os.write(ssid, 0, ssid.length);
         os.write(ssidPadding, 0, ssidPadding.length);
 
         int reservedBeginPosition = mHead.length + password.length + passwordPadding.length;
-        int ssidBeginPosition = reservedBeginPosition + reservedData.length + reservedPadding.length;
+        int ivBeginPosition = reservedBeginPosition + reservedData.length + reservedPadding.length;
+        int ssidBeginPosition = ivBeginPosition + aesIV.length;
         int offset = 0;
         ByteArrayInputStream is = new ByteArrayInputStream(os.toByteArray());
         int sequence = SEQUENCE_FIRST;
         int count = 0;
         while (is.available() > 0) {
             int expectLength;
-            boolean tailIsCrc;
+            boolean crcInPacket;
             if (sequence < SEQUENCE_FIRST + 1) {
                 // First packet
-                tailIsCrc = false;
+                crcInPacket = true;
                 expectLength = 6;
             } else {
                 if (offset < reservedBeginPosition) {
                     // Password data
-                    tailIsCrc = !passwordEncode;
+                    crcInPacket = passwordEncode;
                     expectLength = passwordPaddingFactor;
-                } else if (offset < ssidBeginPosition) {
+                } else if (offset < ivBeginPosition) {
                     // Reserved data
-                    tailIsCrc = !reservedEncode;
+                    crcInPacket = reservedEncode;
                     expectLength = reservedPaddingFactor;
+                } else if (offset < ssidBeginPosition) {
+                    // aes iv data
+                    crcInPacket = true;
+                    expectLength = 5;
                 } else {
                     // SSID data
-                    tailIsCrc = !ssidEncode;
+                    crcInPacket = ssidEncode;
                     expectLength = ssidPaddingFactor;
                 }
             }
@@ -286,7 +302,7 @@ class EspProvisioningParams {
             if (expectLength < buf.length) {
                 buf[buf.length - 1] = (byte) seqCrc;
             }
-            addDataFor6Bytes(buf, sequence, seqCrc, tailIsCrc);
+            addDataFor6Bytes(buf, sequence, seqCrc, !crcInPacket);
             ++sequence;
             ++count;
         } // end while

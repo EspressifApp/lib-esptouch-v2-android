@@ -32,12 +32,12 @@
   ```
 
 - Start provisioning
-    - Provisioning task will run for 90 seconds
+    - Provisioning task will last for 90 seconds
   ```java
   Context context; // Set Application Context
   EspProvisioningRequest request = new EspProvisioningRequest.Builder(context)
                   .setSSID(ssid) // AP's SSID, nullable
-                  .setBSSID(bssid) // AP's BSSID, nullable
+                  .setBSSID(bssid) // AP's BSSID, nonnull
                   .setPassword(password) // AP's password, nullable if the AP is open
                   .setReservedData(customData) // User's custom data, nullable. If not null, the max length is 64
                   .setAESKey(aesKey) // nullable, if not null, it must be 16 bytes. App developer should negotiate an AES key with Device developer first.
